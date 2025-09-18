@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TCAE - Tema 21: Úlceras por Presión</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Iconos Lucide como CSS */
+        .icon { width: 1.5rem; height: 1.5rem; display: inline-block; }
+        .icon-home::before { content: "🏠"; font-size: 1.2rem; }
+        .icon-book::before { content: "📖"; font-size: 1.2rem; }
+        .icon-download::before { content: "📥"; font-size: 1.2rem; }
+        .icon-study::before { content: "📚"; font-size: 1.2rem; }
+        .icon-exam::before { content: "⚡"; font-size: 1.2rem; }
+        .icon-random::before { content: "🎲"; font-size: 1.2rem; }
+        .icon-calculator::before { content: "📊"; font-size: 1.2rem; }
+        .icon-gallery::before { content: "🖼️"; font-size: 1.2rem; }
+        .icon-stats::before { content: "📈"; font-size: 1.2rem; }
+        .icon-arrow-right::before { content: "→"; }
+        .icon-arrow-left::before { content: "←"; }
+        .icon-clock::before { content: "⏰"; }
+        .icon-check::before { content: "✅"; color: green; }
+        .icon-x::before { content: "❌"; color: red; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        const UlcerasPresionApp = () => {
+            // Estados principales
+            const [currentModule, setCurrentModule] = useState('home');
+            const [currentQuestion, setCurrentQuestion] = useState(0);
+            const [selectedAnswer, setSelectedAnswer] = useState(null);
+            const [showExplanation, setShowExplanation] = useState(false);
+            const [userAnswers, setUserAnswers] = useState({});
+            const [timer, setTimer] = useState(0);
+            const [timerRunning, setTimerRunning] = useState(false);
+            const [examFinished, setExamFinished] = useState(false);
+            const [nortonScore, setNortonScore] = useState({ 
+                condicion: 4, actividad: 4, movilidad: 4, incontinencia: 4, estado_mental: 4 
+            });
+
+            // Datos de las 22 preguntas
+            const questions = [
+                {
+                    id: 253,
+                    question: "Para generar una ulcera por presión (UPP) sería suficiente. Señala la correcta:",
+                    options: [
+                        "Presiones pequeñas mantenidas durante periodos de tiempo prolongado, como presiones elevadas mantenidas durante 4 horas",
+                        "Presiones pequeñas mantenidas durante periodos de tiempo prolongado, como presiones elevadas mantenidas durante 2 horas",
+                        "Presiones pequeñas mantenidas durante periodo de tiempo prolongado, como presiones elevadas durante 24 horas",
+                        "Presiones pequeñas mantenidas durante periodo de tiempo prolongado, como presiones elevadas durante 8 horas"
+                    ],
+                    correct: 1,
+                    explanation: "Las UPP se pueden generar con presiones pequeñas mantenidas durante períodos prolongados o con presiones elevadas durante períodos más cortos, como 2 horas. Este es un concepto fundamental para la prevención."
+                },
+                {
+                    id: 254,
+                    question: "El sistema de clasificación de las UPP en cuatro categorías se establece en base al alcance en profundidad de la lesión. A que categoría correspondería la pérdida total del espesor de los tejidos.",
+                    options: ["Categoría I", "Categoría II", "Categoría III", "Categoría IV"],
+                    correct: 3,
+                    explanation: "La Categoría IV corresponde a la pérdida total del espesor de los tejidos, llegando hasta hueso, tendón o músculo. Es la más grave."
+                },
+                {
+                    id: 255,
+                    question: "Las localizaciones de las UPP debidas a Dispositivos sanitarios (DS) depende del juicio clínico de la enfermera y de las acciones de prevención. Cual de este dispositivo no causaría UPP en la Nariz.",
+                    options: ["Gafas Nasales", "Sondas Nasogástricas", "Drenajes", "Mascarilla"],
+                    correct: 2,
+                    explanation: "Los drenajes no se colocan en la nariz, por lo que no causarían UPP en esa localización. Las gafas nasales, sondas nasogástricas y mascarillas sí pueden causar lesiones por presión en la nariz."
+                },
+                {
+                    id: 256,
+                    question: "Las localizaciones más frecuentes de las UPP se corresponden con zonas de apoyo. Si el paciente está en decúbito lateral, que zona no se localizaría UPP:",
+                    options: ["Maléolos", "Costillas", "Orejas", "Coxis"],
+                    correct: 3,
+                    explanation: "En decúbito lateral, el coxis no está en contacto directo con la superficie de apoyo, por lo que no sería una zona típica de UPP en esta posición. Sí lo serían maléolos, costillas y orejas."
+                },
+                {
+                    id: 257,
+                    question: "Dentro de las medidas de prevención de UPP, cual no es correcta:",
+                    options: ["Control de humedad", "Educación sanitaria", "Gasto sanitario", "Valoración y cuidados nutricionales"],
+                    correct: 2,
+                    explanation: "El 'gasto sanitario' no es una medida de prevención de UPP. Las medidas correctas incluyen control de humedad, educación sanitaria y valoración nutricional."
+                },
+                {
+                    id: 258,
+                    question: "Cuál de estos factores de riesgo en la aparición de UPP, no es un factor intrínseco:",
+                    options: ["Diabetes", "Incontinencia Urinaria", "Humedad", "Inconsciencia"],
+                    correct: 2,
+                    explanation: "La humedad es un factor extrínseco (del entorno), mientras que diabetes, incontinencia urinaria e inconsciencia son factores intrínsecos (del paciente)."
+                },
+                {
+                    id: 259,
+                    question: "La Escala Norton, mide el riesgo que tiene un paciente de padecer úlceras por presión UPP, que valoración de riesgo no es correcta.",
+                    options: ["De 10 a 12 riesgo alto", "De 11 a 20 riesgo mínimo", "De 5 a 9 riesgo muy alto", "De 13 a 14 riesgo medio"],
+                    correct: 1,
+                    explanation: "En la Escala Norton, de 11 a 20 NO es riesgo mínimo. La puntuación correcta es: 5-9 riesgo muy alto, 10-12 riesgo alto, 13-14 riesgo medio, 15-20 riesgo mínimo."
+                },
+                {
+                    id: 260,
+                    question: "Para minimizar el efecto de la presión como causa de UPP, se recomienda considerar cuatro elementos, cuál de estos no es correcto.",
+                    options: ["Cambios posturales", "Utilización de flotadores cuando el individuo esté en sedestación", "Protección local ante la presión", "Movilización"],
+                    correct: 1,
+                    explanation: "NO se recomienda el uso de flotadores tipo 'donut' ya que pueden concentrar la presión en los bordes y empeorar la circulación en la zona central."
+                },
+                {
+                    id: 261,
+                    question: "En pacientes encamados por norma general se recomienda realizar cambios posturales siguiendo una rotación programada cada:",
+                    options: ["Cada 4 o 5 horas", "Cada 8 Horas", "Cada 2 o 3 horas", "Cada 10 horas"],
+                    correct: 2,
+                    explanation: "Los cambios posturales deben realizarse cada 2-3 horas en pacientes encamados para evitar la presión prolongada sobre las mismas zonas corporales."
+                },
+                {
+                    id: 262,
+                    question: "Cuál de estas fases, no forman parte del proceso de cicatrización de Las UPP:",
+                    options: ["Inflamación", "Epitelización", "Exudado", "Hemostasia"],
+                    correct: 2,
+                    explanation: "El 'exudado' no es una fase de cicatrización, sino un producto de la herida. Las fases correctas son: hemostasia, inflamación, proliferación y epitelización."
+                },
+                {
+                    id: 263,
+                    question: "Cual no es un método de obtención de una muestra de exudado para el cultivo de microorganismos.",
+                    options: ["Aspiración percutánea", "Apósito", "El frotis mediante hisopo", "Biopsia tisular"],
+                    correct: 1,
+                    explanation: "El 'apósito' no es un método de obtención de muestra para cultivo. Los métodos correctos son aspiración percutánea, frotis con hisopo y biopsia tisular."
+                },
+                {
+                    id: 264,
+                    question: "Los productos que generan unas condiciones óptimas que favorecen el cierre de heridas crónicas UPP, se basan en la cura en ambiente húmedo. Cual no es correcta.",
+                    options: ["Hidrocoloides", "Apósito de Gasa", "Hidrogeles", "Hidrofibras gelificantes"],
+                    correct: 1,
+                    explanation: "Los apósitos de gasa NO mantienen un ambiente húmedo óptimo para la cicatrización. Los productos correctos para cura húmeda son hidrocoloides, hidrogeles e hidrofibras."
+                }
+            ];
+
+            // Resumen teórico
+            const theoreticalContent = {
+                title: "ÚLCERAS POR PRESIÓN - Resumen Teórico (Ingeniería Inversa)",
+                sections: [
+                    {
+                        title: "1. DEFINICIÓN Y FISIOPATOLOGÍA",
+                        content: `Las Úlceras por Presión (UPP) son lesiones localizadas en la piel y/o tejidos subyacentes, generalmente sobre prominencias óseas, como resultado de la presión o la presión en combinación con cizallamiento.
+
+TIEMPO CRÍTICO: Se pueden generar con presiones pequeñas mantenidas durante períodos prolongados O con presiones elevadas mantenidas durante períodos cortos (incluso 2 horas).
+
+MECANISMO: La presión interrumpe el flujo sanguíneo, causando isquemia tisular y posterior necrosis.`
+                    },
+                    {
+                        title: "2. CLASIFICACIÓN POR CATEGORÍAS",
+                        content: `SISTEMA DE 4 CATEGORÍAS basado en la profundidad de la lesión:
+
+• CATEGORÍA I: Eritema no blanqueante en piel intacta
+• CATEGORÍA II: Pérdida parcial del grosor de la piel (dermis)
+• CATEGORÍA III: Pérdida total del grosor de la piel (hasta tejido subcutáneo)
+• CATEGORÍA IV: Pérdida total del grosor de los tejidos (hasta hueso, tendón, músculo)
+
+La Categoría IV es la más grave y corresponde a la pérdida total del espesor de los tejidos.`
+                    },
+                    {
+                        title: "3. LOCALIZACIONES SEGÚN POSICIÓN",
+                        content: `Las UPP aparecen en ZONAS DE APOYO según la posición del paciente:
+
+DECÚBITO SUPINO: Sacro, talones, occipital, codos
+DECÚBITO LATERAL: Maléolos, costillas, orejas, trocánter mayor
+DECÚBITO PRONO: Rodillas, dedos de los pies, frente
+SEDESTACIÓN: Isquiones, sacro
+
+NOTA: En decúbito lateral, el COXIS NO se localiza UPP ya que no está en contacto con la superficie.
+
+UPP POR DISPOSITIVOS SANITARIOS:
+• Nariz: gafas nasales, sondas nasogástricas, mascarillas
+• Los drenajes NO causan UPP en la nariz`
+                    },
+                    {
+                        title: "4. FACTORES DE RIESGO",
+                        content: `FACTORES INTRÍNSECOS (del paciente):
+• Diabetes mellitus
+• Incontinencia urinaria
+• Inconsciencia/alteración del nivel de conciencia
+• Estado nutricional deficiente
+• Edad avanzada
+• Movilidad reducida
+
+FACTORES EXTRÍNSECOS (del entorno):
+• HUMEDAD (factor extrínseco, NO intrínseco)
+• Fricción y cizallamiento
+• Presión prolongada
+• Superficies inadecuadas`
+                    },
+                    {
+                        title: "5. ESCALAS DE VALORACIÓN DEL RIESGO DE UPP",
+                        content: `🔍 ESCALA DE NORTON (Más utilizada en España)
+Evalúa 5 parámetros con puntuación de 1-4 cada uno:
+
+1. CONDICIÓN FÍSICA GENERAL:
+   • 4 puntos: Buena (sin patología relevante)
+   • 3 puntos: Regular (alguna patología crónica controlada)
+   • 2 puntos: Mala (patología grave o descompensada)
+   • 1 punto: Muy mala (estado terminal o crítico)
+
+2. ESTADO DE ACTIVIDAD:
+   • 4 puntos: Ambulante sin ayuda
+   • 3 puntos: Camina con ayuda (bastón, andador)
+   • 2 puntos: Silla de ruedas (se moviliza solo)
+   • 1 punto: Encamado (dependiente completo)
+
+3. MOVILIDAD:
+   • 4 puntos: Total (se mueve sin limitaciones)
+   • 3 puntos: Algo limitada (se mueve con esfuerzo)
+   • 2 puntos: Muy limitada (movimientos mínimos)
+   • 1 punto: Inmóvil (no puede cambiar de posición)
+
+4. INCONTINENCIA:
+   • 4 puntos: No (control total esfínteres)
+   • 3 puntos: Ocasional (incontinencia esporádica)
+   • 2 puntos: Urinaria habitual (solo orina)
+   • 1 punto: Doble incontinencia (urinaria + fecal)
+
+5. ESTADO MENTAL:
+   • 4 puntos: Alerta y orientado
+   • 3 puntos: Apático (disminución respuesta estímulos)
+   • 2 puntos: Confuso (desorientación temporal/espacial)
+   • 1 punto: Estuporoso/Comatoso
+
+INTERPRETACIÓN DE RESULTADOS NORTON:
+• 15-20 puntos: Riesgo MÍNIMO - Vigilancia rutinaria
+• 13-14 puntos: Riesgo MEDIO - Medidas preventivas básicas
+• 10-12 puntos: Riesgo ALTO - Protocolo preventivo intensivo
+• 5-9 puntos: Riesgo MUY ALTO - Máximas medidas preventivas
+
+⚠️ ERROR FRECUENTE EN EXÁMENES: 11-20 NO es riesgo mínimo.`
+                    }
+                ]
+            };
+
+            // Timer effect
+            useEffect(() => {
+                let interval = null;
+                if (timerRunning && !examFinished) {
+                    interval = setInterval(() => {
+                        setTimer(timer => timer + 1);
+                    }, 1000);
+                } else if (!timerRunning) {
+                    clearInterval(interval);
+                }
+                return () => clearInterval(interval);
+            }, [timerRunning, examFinished]);
+
+            // Formatear tiempo
+            const formatTime = (seconds) => {
+                const mins = Math.floor(seconds / 60);
+                const secs = seconds % 60;
+                return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            };
+
+            // Función para descargar el resumen
+            const downloadResumen = () => {
+                let content = `${theoreticalContent.title}\n\n`;
+                content += `Contenido extraído de las 22 preguntas reales que han salido en exámenes\n`;
+                content += `Método Pareto 20/80: Solo lo que SÍ sale en exámenes\n\n`;
+                content += `${'='.repeat(80)}\n\n`;
+
+                theoreticalContent.sections.forEach((section, index) => {
+                    content += `${section.title}\n`;
+                    content += `${'-'.repeat(section.title.length)}\n\n`;
+                    content += `${section.content}\n\n`;
+                    if (index < theoreticalContent.sections.length - 1) {
+                        content += `${'-'.repeat(40)}\n\n`;
+                    }
+                });
+
+                content += `\n${'='.repeat(80)}\n`;
+                content += `Generado por: Aplicación Interactiva TCAE - Tema 21: Úlceras por Presión\n`;
+                content += `Fecha: ${new Date().toLocaleDateString('es-ES')}\n`;
+                content += `Total de preguntas analizadas: 22\n`;
+
+                const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = 'TCAE_Tema21_UlcerasPresion_ResumenTeorico.txt';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(url);
+            };
+
+            // Calcular puntuación Norton
+            const calculateNortonScore = () => {
+                return Object.values(nortonScore).reduce((sum, value) => sum + value, 0);
+            };
+
+            const getNortonRiskLevel = (score) => {
+                if (score >= 15) return { level: "MÍNIMO", color: "text-green-600", bg: "bg-green-100" };
+                if (score >= 13) return { level: "MEDIO", color: "text-yellow-600", bg: "bg-yellow-100" };
+                if (score >= 10) return { level: "ALTO", color: "text-orange-600", bg: "bg-orange-100" };
+                return { level: "MUY ALTO", color: "text-red-600", bg: "bg-red-100" };
+            };
+
+            // Estadísticas
+            const getStats = () => {
+                const totalAnswered = Object.keys(userAnswers).length;
+                const correctAnswers = Object.values(userAnswers).filter(answer => answer.correct).length;
+                const percentage = totalAnswered > 0 ? Math.round((correctAnswers / totalAnswered) * 100) : 0;
+                return { totalAnswered, correctAnswers, percentage };
+            };
+
+            // Módulos
+            const modules = [
+                { id: 'theory', icon: 'book', title: 'Resumen Teórico', desc: 'Conceptos clave extraídos de las preguntas reales' },
+                { id: 'download', icon: 'download', title: 'Descargar Resumen', desc: 'Descarga el contenido teórico completo' },
+                { id: 'study', icon: 'study', title: 'Modo Estudio', desc: 'Aprendizaje guiado con explicaciones' },
+                { id: 'exam', icon: 'exam', title: 'Modo Examen', desc: 'Simulacro cronometrado' },
+                { id: 'random', icon: 'random', title: 'Modo Aleatorio', desc: 'Preguntas en orden random' },
+                { id: 'norton', icon: 'calculator', title: 'Calculadora Norton', desc: 'Herramienta de valoración de riesgo' },
+                { id: 'gallery', icon: 'gallery', title: 'Galería Visual', desc: 'Imágenes y esquemas explicativos' },
+                { id: 'stats', icon: 'stats', title: 'Estadísticas', desc: 'Progreso y rendimiento' }
+            ];
+
+            // Componente Home
+            const HomeModule = () => (
+                <div className="max-w-4xl mx-auto">
+                    <div className="text-center mb-8">
+                        <h1 className="text-3xl font-bold text-blue-800 mb-2">
+                            🏥 TEMA 21: ÚLCERAS POR PRESIÓN
+                        </h1>
+                        <p className="text-gray-600 mb-4">Aplicación interactiva basada en 22 preguntas reales de examen</p>
+                        <div className="bg-blue-50 rounded-lg p-4 inline-block">
+                            <p className="text-sm text-blue-700">
+                                📊 <strong>Método Pareto 20/80:</strong> Estudiamos solo lo que SÍ sale en exámenes
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {modules.map((module, index) => (
+                            <div
+                                key={module.id}
+                                className={`bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow cursor-pointer border-l-4 ${
+                                    module.id === 'download' ? 'border-green-500 bg-green-50' : 'border-blue-500'
+                                }`}
+                                onClick={() => {
+                                    if (module.id === 'download') {
+                                        downloadResumen();
+                                    } else {
+                                        setCurrentModule(module.id);
+                                    }
+                                }}
+                            >
+                                <div className="p-6">
+                                    <div className="flex items-center mb-3">
+                                        <span className={`icon icon-${module.icon} mr-3`}></span>
+                                        <h3 className={`font-semibold text-lg ${
+                                            module.id === 'download' ? 'text-green-800' : 'text-gray-800'
+                                        }`}>
+                                            {module.title}
+                                        </h3>
+                                    </div>
+                                    <p className={`text-sm mb-4 ${
+                                        module.id === 'download' ? 'text-green-700' : 'text-gray-600'
+                                    }`}>
+                                        {module.desc}
+                                    </p>
+                                    <div className="flex justify-between items-center">
+                                        <span className={`text-xs px-2 py-1 rounded ${
+                                            module.id === 'download' 
+                                                ? 'bg-green-200 text-green-800' 
+                                                : 'bg-blue-100 text-blue-700'
+                                        }`}>
+                                            {module.id === 'download' ? 'Descarga Directa' : `Módulo ${index}`}
+                                        </span>
+                                        <span className="icon icon-arrow-right text-blue-500"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="mt-8 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-6">
+                        <h3 className="font-semibold text-lg mb-3">🎯 Flujo de Estudio Recomendado</h3>
+                        <div className="text-sm text-gray-700">
+                            📖 Resumen Teórico → 📥 Descarga → 📚 Modo Estudio → 📊 Calculadora Norton → 🖼️ Galería Visual → 🎲 Modo Aleatorio → ⚡ Modo Examen → 📈 Estadísticas
+                        </div>
+                    </div>
+                </div>
+            );
+
+            // Componente Teoría
+            const TheoryModule = () => (
+                <div className="max-w-4xl mx-auto">
+                    <div className="bg-white rounded-lg shadow-lg">
+                        <div className="bg-blue-600 text-white p-6 rounded-t-lg">
+                            <h2 className="text-2xl font-bold flex items-center">
+                                <span className="icon icon-book mr-3"></span>
+                                {theoreticalContent.title}
+                            </h2>
+                            <p className="mt-2 opacity-90">Contenido extraído de las 22 preguntas reales que han salido en exámenes</p>
+                        </div>
+                        
+                        <div className="p-6">
+                            {theoreticalContent.sections.map((section, index) => (
+                                <div key={index} className="mb-8 last:mb-0">
+                                    <h3 className="text-xl font-semibold text-blue-800 mb-4 border-l-4 border-blue-500 pl-4">
+                                        {section.title}
+                                    </h3>
+                                    <div className="bg-gray-50 rounded-lg p-4">
+                                        <pre className="text-gray-700 whitespace-pre-wrap font-sans text-sm leading-relaxed">
+                                            {section.content}
+                                        </pre>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            );
+
+            // Componente Norton
+            const NortonModule = () => {
+                const totalScore = calculateNortonScore();
+                const riskLevel = getNortonRiskLevel(totalScore);
+
+                return (
+                    <div className="max-w-4xl mx-auto">
+                        <div className="bg-white rounded-lg shadow-lg">
+                            <div className="bg-purple-600 text-white p-6 rounded-t-lg">
+                                <h2 className="text-2xl font-bold flex items-center">
+                                    <span className="icon icon-calculator mr-3"></span>
+                                    Calculadora Escala Norton
+                                </h2>
+                                <p className="mt-2 opacity-90">Valoración del riesgo de úlceras por presión</p>
+                            </div>
+
+                            <div className="p-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="space-y-6">
+                                        {Object.entries({
+                                            condicion: "Condición Física General",
+                                            actividad: "Estado de Actividad", 
+                                            movilidad: "Movilidad",
+                                            incontinencia: "Incontinencia",
+                                            estado_mental: "Estado Mental"
+                                        }).map(([key, label]) => (
+                                            <div key={key}>
+                                                <label className="block text-sm font-medium text-gray-700 mb-2">{label}</label>
+                                                <select 
+                                                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+                                                    value={nortonScore[key]}
+                                                    onChange={(e) => setNortonScore({...nortonScore, [key]: parseInt(e.target.value)})}
+                                                >
+                                                    <option value={4}>4 - Muy bueno/Normal</option>
+                                                    <option value={3}>3 - Bueno/Ligera limitación</option>
+                                                    <option value={2}>2 - Regular/Muy limitado</option>
+                                                    <option value={1}>1 - Malo/Inmóvil</option>
+                                                </select>
+                                            </div>
+                                        ))}
+                                    </div>
+
+                                    <div className="bg-gray-50 rounded-lg p-6">
+                                        <h3 className="text-lg font-semibold mb-4">Resultado de la Valoración</h3>
+                                        <div className="text-center mb-6">
+                                            <div className="text-4xl font-bold text-purple-600 mb-2">{totalScore}</div>
+                                            <div className="text-gray-600">Puntuación Total</div>
+                                        </div>
+
+                                        <div className={`${riskLevel.bg} ${riskLevel.color} rounded-lg p-4 text-center mb-4`}>
+                                            <div className="font-semibold text-lg">RIESGO {riskLevel.level}</div>
+                                        </div>
+
+                                        <div className="text-sm text-gray-600 space-y-2">
+                                            <div className="flex justify-between"><span>15-20 puntos:</span><span className="text-green-600">Riesgo Mínimo</span></div>
+                                            <div className="flex justify-between"><span>13-14 puntos:</span><span className="text-yellow-600">Riesgo Medio</span></div>
+                                            <div className="
